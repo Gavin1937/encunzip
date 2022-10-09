@@ -2,7 +2,7 @@
 INFO
        Author      - Gavin1937
        Github      -
-       encunzip.py - simply script to list & extract zip file with encodings.
+       encunzip.py - simple script to list & extract zip file with encodings.
 
 SYNOPSIS
        python3 encunzip.py OPERATION ENCODING file.zip OUTPUTDIR
