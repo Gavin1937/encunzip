@@ -7,6 +7,9 @@ INFO
 SYNOPSIS
        python3 encunzip.py OPERATION ENCODING file.zip OUTPUTDIR
 
+       you can set encunzip.py to an executable file and use:
+       ./encunzip.py OPERATION ENCODING file.zip OUTPUTDIR
+
 DESCRIPTION
        Unzip zip file with non utf-8 encodings.
        This tool is aiming to simplify command "unzip -O encoding" with a small ENCODING TABLE contians commonly used encodings.
@@ -38,7 +41,7 @@ ARGUMENTS
        OUTPUTDIR    Output directory to extract into.
                     If supplied directory doesn't exist, this script will create one.
 
-       EXAMPLES:
+EXAMPLES:
 
            Listing contents in "file.zip" with jp(cp932) encoding.
                python3 encunzip.py l jp file.zip
