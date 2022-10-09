@@ -148,7 +148,7 @@ if __name__ == '__main__':
 
     try:
 
-        if len(argv) < 3 or len(argv) > 5:
+        if len(argv) < 4 or len(argv) > 5:
             help()
             exit()
 
@@ -161,12 +161,14 @@ if __name__ == '__main__':
             enclszip(infile, encoding)
 
         elif operation == 'e':
+            if len(argv) != 5: raise Exception("Please supply a output directory")
             outpath = Path(argv[4])
             if not outpath.exists(): outpath.mkdir()
             encunzipe(infile, encoding, outpath)
 
         # unzip to a folder with original file structure
         elif operation == 'x':
+            if len(argv) != 5: raise Exception("Please supply a output directory")
             outpath = Path(argv[4])
             if not outpath.exists(): outpath.mkdir()
             encunzipx(infile, encoding, outpath)
@@ -177,3 +179,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print()
         exit(-1)
+
