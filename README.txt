@@ -1,11 +1,11 @@
 
 INFO
        Author      - Gavin1937
-       Github      -
+       Github      - https://github.com/Gavin1937/encunzip
        encunzip.py - simple script to list & extract zip file with encodings.
 
 SYNOPSIS
-       python3 encunzip.py OPERATION ENCODING file.zip OUTPUTDIR
+       python3 encunzip.py OPERATION ENCODING file.zip OUTPUTDIR OPERATION ARG
 
        you can set encunzip.py to an executable file and use:
        ./encunzip.py OPERATION ENCODING file.zip OUTPUTDIR
@@ -27,6 +27,10 @@ ARGUMENTS
            x        Extract zip file content with file structure. (unzip -x)
                     Extracted filename's encoding will be the one specified by ENCODING.
                     "OUTPUTDIR" option is required for this operation.
+
+           p        Apply password to zipfile, this OPERATION must be add to the end of command.
+                    You also need to supply a password after it.
+                    After the password, you also need to supply the encoding of password.
 
        ENCODING     common encodings listing in ENCODING TABLE or other encodings like utf-8.
 
@@ -51,4 +55,7 @@ EXAMPLES:
 
            Extract contents in "file.zip" to directory "output" with chinese_1(gb18030) encoding keeping file structure.
                python3 encunzip.py x chinese file.zip output
+
+           Extract contents in "file.zip" with password "1234" with chinese_1
+               python3 encunzip.py e jp file.zip p 1234 ch1
 

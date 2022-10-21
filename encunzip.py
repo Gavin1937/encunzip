@@ -7,7 +7,7 @@ INFO
        encunzip.py - simple script to list & extract zip file with encodings.
 
 SYNOPSIS
-       python3 encunzip.py OPERATION ENCODING file.zip OUTPUTDIR
+       python3 encunzip.py OPERATION ENCODING file.zip OUTPUTDIR OPERATION ARG
 
        you can set encunzip.py to an executable file and use:
        ./encunzip.py OPERATION ENCODING file.zip OUTPUTDIR
@@ -29,6 +29,10 @@ ARGUMENTS
            x        Extract zip file content with file structure. (unzip -x)
                     Extracted filename's encoding will be the one specified by ENCODING.
                     "OUTPUTDIR" option is required for this operation.
+
+           p        Apply password to zipfile, this OPERATION must be add to the end of command.
+                    You also need to supply a password after it.
+                    After the password, you also need to supply the encoding of password.
 
        ENCODING     common encodings listing in ENCODING TABLE or other encodings like utf-8.
 
@@ -53,6 +57,9 @@ EXAMPLES:
 
            Extract contents in "file.zip" to directory "output" with chinese_1(gb18030) encoding keeping file structure.
                python3 encunzip.py x chinese file.zip output
+
+           Extract contents in "file.zip" with password "1234" with chinese_1
+               python3 encunzip.py e jp file.zip p 1234 ch1
 
 """
 
@@ -88,7 +95,7 @@ def enclszip(infile, encoding):
 
 # unzip without file structure
 # unzip -e
-def encunzipe(infile, encoding, outfile):
+def encunzipe(infile, encoding, outfile, pwd=None):
 
     # setup/check input & output
     infile = Path(infile)
@@ -106,14 +113,14 @@ def encunzipe(infile, encoding, outfile):
             outitem = outfile/filename[filename.rfind('/')+1:].encode('cp437').decode(encoding)
             print(outitem)
             if not info.is_dir(): # is file
-                source = zip.open(filename)
+                source = zip.open(filename, pwd=pwd)
                 target = open(outitem, "wb")
                 with source, target:
                     copyfileobj(source, target)
 
 # unzip keeping file structure
 # unzip -x
-def encunzipx(infile, encoding, outfile):
+def encunzipx(infile, encoding, outfile, pwd=None):
 
     # setup/check input & output
     infile = Path(infile)
@@ -131,7 +138,7 @@ def encunzipx(infile, encoding, outfile):
             outitem = outfile/filename.encode('cp437').decode(encoding)
             print(outitem)
             if not info.is_dir(): # is file
-                source = zip.open(filename)
+                source = zip.open(filename, pwd=pwd)
                 target = open(outitem, "wb")
                 with source, target:
                     copyfileobj(source, target)
@@ -151,30 +158,35 @@ if __name__ == '__main__':
 
     try:
 
-        if len(argv) < 4 or len(argv) > 5:
+        if len(argv) < 4 or len(argv) > 8 or len(argv) == 6:
             help()
             exit()
 
         operation = argv[1]
         encoding = getEnc(argv[2])
         infile = Path(argv[3])
+        password = None
+        pwdencode = None
+        if len(argv) == 8:
+             pwdencode = getEnc(argv[7])
+             password = argv[6].encode(pwdencode)
 
         # list zip file
         if operation == 'l':
             enclszip(infile, encoding)
 
         elif operation == 'e':
-            if len(argv) != 5: raise Exception("Please supply a output directory")
+            if len(argv) != 5 and len(argv) != 8: raise Exception("Please supply a output directory")
             outpath = Path(argv[4])
             if not outpath.exists(): outpath.mkdir()
-            encunzipe(infile, encoding, outpath)
+            encunzipe(infile, encoding, outpath, password)
 
         # unzip to a folder with original file structure
         elif operation == 'x':
-            if len(argv) != 5: raise Exception("Please supply a output directory")
+            if len(argv) != 5 and len(argv) != 8: raise Exception("Please supply a output directory")
             outpath = Path(argv[4])
             if not outpath.exists(): outpath.mkdir()
-            encunzipx(infile, encoding, outpath)
+            encunzipx(infile, encoding, outpath, password)
 
         else:
             help()
