@@ -106,12 +106,16 @@ def encunzipe(infile, encoding, outfile, pwd=None):
     if not outfile.exists():
         raise Exception(f"Cannot find output directory: {outfile}")
 
+    size = zipSize(infile)
+    current_size = 0
+
     # unzip file
     with ZipFile(infile) as zip:
         for info in zip.infolist():
             filename = info.filename
             outitem = outfile/filename[filename.rfind('/')+1:].encode('cp437').decode(encoding)
-            print(outitem)
+            current_size += info.file_size
+            print(genPerc(current_size, size), outitem)
             if not info.is_dir(): # is file
                 source = zip.open(filename, pwd=pwd)
                 target = open(outitem, "wb")
@@ -131,12 +135,16 @@ def encunzipx(infile, encoding, outfile, pwd=None):
     if not outfile.exists():
         raise Exception(f"Cannot find output directory: {outfile}")
 
+    size = zipSize(infile)
+    current_size = 0
+
     # unzip file
     with ZipFile(infile) as zip:
         for info in zip.infolist():
             filename = info.filename
             outitem = outfile/filename.encode('cp437').decode(encoding)
-            print(outitem)
+            current_size += info.file_size
+            print(genPerc(current_size, size), outitem)
             if not info.is_dir(): # is file
                 source = zip.open(filename, pwd=pwd)
                 target = open(outitem, "wb")
@@ -149,6 +157,21 @@ def getEnc(enc) -> str:
     if enc in ENCODING_TABLE:
         return ENCODING_TABLE[enc]
     return enc
+
+def genPerc(current_size, ttl_size) -> str:
+    perc = ((current_size / ttl_size) * 100)
+    int_part = int(perc)
+    float_part = round((perc - int_part), 2)
+    int_part = str(int_part).rjust(3, ' ')
+    float_part = str(float_part)[2:].ljust(2, '0')
+    perc = int_part + '.' + float_part + ' %'
+    return perc
+
+def zipSize(infile):
+    size = 0
+    with ZipFile(infile) as zip:
+        size = sum([info.file_size for info in zip.infolist() if not info.is_dir()])
+    return size
 
 def help():
     print(MSG, end='')
