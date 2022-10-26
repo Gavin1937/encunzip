@@ -57,5 +57,5 @@ EXAMPLES:
                python3 encunzip.py x chinese file.zip output
 
            Extract contents in "file.zip" with password "1234" with chinese_1
-               python3 encunzip.py e jp file.zip p 1234 ch1
+               python3 encunzip.py e jp file.zip output p 1234 ch1
 
