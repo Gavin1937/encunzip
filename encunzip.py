@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 MSG = """
+
 INFO
        Author      - Gavin1937
        Github      - https://github.com/Gavin1937/encunzip
@@ -15,6 +16,11 @@ SYNOPSIS
 DESCRIPTION
        Unzip zip file with non utf-8 encodings.
        This tool is aiming to simplify command "unzip -O encoding" with a small ENCODING TABLE contians commonly used encodings.
+
+REQUIREMENTS
+       * rarfile >= 4.0
+
+       install with `pip install -r requirements.txt`
 
 ARGUMENTS
        OPERATION    Different operations for the script.
