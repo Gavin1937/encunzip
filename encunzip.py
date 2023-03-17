@@ -4,7 +4,7 @@ MSG = """
 INFO
        Author      - Gavin1937
        Github      - https://github.com/Gavin1937/encunzip
-       encunzip.py - simple script to list & extract zip file with encodings.
+       encunzip.py - simple script to list & extract zip/rar file with encodings.
 
 SYNOPSIS
        python3 encunzip.py OPERATION ENCODING file.zip OUTPUTDIR OPERATION ARG
@@ -63,7 +63,8 @@ EXAMPLES:
 
 """
 
-from zipfile import ZipFile, ZipInfo
+from zipfile import ZipFile
+from rarfile import RarFile
 from sys import argv
 from pathlib import Path
 from shutil import copyfileobj
@@ -78,17 +79,39 @@ ENCODING_TABLE = {
     "ch2": "gbk"
 }
 
+FILEHEADERS = {
+    b'PK\x03\x04' : ZipFile, # zip
+    b'PK\x05\x06' : ZipFile, # zip_empty
+    b'PK\x07\x08' : ZipFile, # zip_spanned
+    b'\x52\x61\x72\x21\x1A\x07\x00' : RarFile, # rar_1_4
+    b'\x52\x61\x72\x21\x1A\x07\x01\x00' : RarFile, # rar_5
+}
+
+
+def loadarchive(infile):
+    output = None
+    with open(infile, 'rb') as file:
+        header = file.read(20)
+        for k,v in FILEHEADERS.items():
+            if header.startswith(k):
+                output = v
+                break
+    if output is None:
+        raise Exception('Failed to load archive, file header check failed.')
+    return output
+
 # list zip file content
 # unzip -l
 def enclszip(infile, encoding):
-
+    
     # setup/check input & output
     infile = Path(infile)
     if not infile.exists():
         raise Exception(f"Cannot find input file: {infile}")
-
+    
     # unzip file
-    with ZipFile(infile) as zip:
+    archive = loadarchive(infile)
+    with archive(infile) as zip:
         for info in zip.infolist():
             item = info.filename.encode('cp437').decode(encoding)
             print(item)
@@ -96,21 +119,22 @@ def enclszip(infile, encoding):
 # unzip without file structure
 # unzip -e
 def encunzipe(infile, encoding, outfile, pwd=None):
-
+    
     # setup/check input & output
     infile = Path(infile)
     if not infile.exists():
         raise Exception(f"Cannot find input file: {infile}")
-
+    
     outfile = Path(outfile)
     if not outfile.exists():
         raise Exception(f"Cannot find output directory: {outfile}")
-
+    
     size = zipSize(infile)
     current_size = 0
-
+    
     # unzip file
-    with ZipFile(infile) as zip:
+    archive = loadarchive(infile)
+    with archive(infile) as zip:
         for info in zip.infolist():
             filename = info.filename
             outitem = outfile/filename[filename.rfind('/')+1:].encode('cp437').decode(encoding)
@@ -125,21 +149,22 @@ def encunzipe(infile, encoding, outfile, pwd=None):
 # unzip keeping file structure
 # unzip -x
 def encunzipx(infile, encoding, outfile, pwd=None):
-
+    
     # setup/check input & output
     infile = Path(infile)
     if not infile.exists():
         raise Exception(f"Cannot find input file: {infile}")
-
+    
     outfile = Path(outfile)
     if not outfile.exists():
         raise Exception(f"Cannot find output directory: {outfile}")
-
+    
     size = zipSize(infile)
     current_size = 0
-
+    
     # unzip file
-    with ZipFile(infile) as zip:
+    archive = loadarchive(infile)
+    with archive(infile) as zip:
         for info in zip.infolist():
             filename = info.filename
             outitem = outfile/filename.encode('cp437').decode(encoding)
@@ -169,7 +194,8 @@ def genPerc(current_size, ttl_size) -> str:
 
 def zipSize(infile):
     size = 0
-    with ZipFile(infile) as zip:
+    archive = loadarchive(infile)
+    with archive(infile) as zip:
         size = sum([info.file_size for info in zip.infolist() if not info.is_dir()])
     return size
 
@@ -178,42 +204,42 @@ def help():
 
 
 if __name__ == '__main__':
-
+    
     try:
-
+        
         if len(argv) < 4 or len(argv) > 8 or len(argv) == 6:
             help()
             exit()
-
+        
         operation = argv[1]
         encoding = getEnc(argv[2])
         infile = Path(argv[3])
         password = None
         pwdencode = None
         if len(argv) == 8:
-             pwdencode = getEnc(argv[7])
-             password = argv[6].encode(pwdencode)
-
+            pwdencode = getEnc(argv[7])
+            password = argv[6].encode(pwdencode)
+        
         # list zip file
         if operation == 'l':
             enclszip(infile, encoding)
-
+        
         elif operation == 'e':
             if len(argv) != 5 and len(argv) != 8: raise Exception("Please supply a output directory")
             outpath = Path(argv[4])
             if not outpath.exists(): outpath.mkdir()
             encunzipe(infile, encoding, outpath, password)
-
+        
         # unzip to a folder with original file structure
         elif operation == 'x':
             if len(argv) != 5 and len(argv) != 8: raise Exception("Please supply a output directory")
             outpath = Path(argv[4])
             if not outpath.exists(): outpath.mkdir()
             encunzipx(infile, encoding, outpath, password)
-
+        
         else:
             help()
-
+        
     except KeyboardInterrupt:
         print()
         exit(-1)

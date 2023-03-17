@@ -3,6 +3,7 @@
 *.zip
 *.rar
 *.7z
+*main*
 
 # folders
 /__pycache__/
