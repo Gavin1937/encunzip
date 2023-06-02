@@ -69,8 +69,6 @@ EXAMPLES:
 
 """
 
-from zipfile import ZipFile
-from rarfile import RarFile
 from sys import argv
 from pathlib import Path
 from shutil import copyfileobj
@@ -86,25 +84,48 @@ ENCODING_TABLE = {
 }
 
 FILEHEADERS = {
-    b'PK\x03\x04' : ZipFile, # zip
-    b'PK\x05\x06' : ZipFile, # zip_empty
-    b'PK\x07\x08' : ZipFile, # zip_spanned
-    b'\x52\x61\x72\x21\x1A\x07\x00' : RarFile, # rar_1_4
-    b'\x52\x61\x72\x21\x1A\x07\x01\x00' : RarFile, # rar_5
+    b'PK\x03\x04' : 'zip', # zip
+    b'PK\x05\x06' : 'zip', # zip_empty
+    b'PK\x07\x08' : 'zip', # zip_spanned
+    b'\x52\x61\x72\x21\x1A\x07\x00' : 'rar', # rar_1_4
+    b'\x52\x61\x72\x21\x1A\x07\x01\x00' : 'rar', # rar_5
 }
 
 
 def loadarchive(infile):
-    output = None
-    with open(infile, 'rb') as file:
-        header = file.read(20)
-        for k,v in FILEHEADERS.items():
-            if header.startswith(k):
-                output = v
+    
+    def read_file_chunk(fd, chunk_size=1024):
+        'lazy reading a file'
+        while True:
+            data = fd.read(chunk_size)
+            if not data:
                 break
-    if output is None:
+            yield data
+    
+    libname = None
+    with open(infile, 'rb') as file:
+        exit_loop = False
+        for chunk in read_file_chunk(file):
+            for header,name in FILEHEADERS.items():
+                if header in chunk:
+                    libname = name
+                    exit_loop = True
+                    break
+            if exit_loop:
+                break
+    if libname is None:
         raise Exception('Failed to load archive, file header check failed.')
-    return output
+    
+    # load necessary library
+    try:
+        if libname == 'zip':
+            from zipfile import ZipFile
+            return ZipFile
+        elif libname == 'rar':
+            from rarfile import RarFile
+            return RarFile
+    except Exception as err:
+        print(f'Failed to load library. {err}')
 
 # list zip file content
 # unzip -l

@@ -2,9 +2,12 @@
 # files
 *.zip
 *.rar
+*.zip
 *.7z
+*.jpg
+*.png
 *main*
 
 # folders
 /__pycache__/
-
+/data/
