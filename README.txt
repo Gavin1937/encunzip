@@ -50,6 +50,10 @@ ARGUMENTS
        OUTPUTDIR    Output directory to extract into.
                     If supplied directory doesn't exist, this script will create one.
 
+OPTIONAL ARGUMENTS
+
+           -noencerr        Ignore encoding & decoding error during operation
+
 EXAMPLES:
 
            Listing contents in "file.zip" with jp(cp932) encoding.
@@ -63,4 +67,7 @@ EXAMPLES:
 
            Extract contents in "file.zip" with password "1234" with chinese_1
                python3 encunzip.py e jp file.zip output p 1234 ch1
+
+           Extract contents in "file.zip" with password "1234" with chinese_1 ignoring any encoding & decoding error
+               python3 encunzip.py e jp file.zip output p 1234 ch1 -noencerr
 

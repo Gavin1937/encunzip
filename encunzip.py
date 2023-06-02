@@ -53,6 +53,10 @@ ARGUMENTS
        OUTPUTDIR    Output directory to extract into.
                     If supplied directory doesn't exist, this script will create one.
 
+OPTIONAL ARGUMENTS
+
+           -noencerr        Ignore encoding & decoding error during operation
+
 EXAMPLES:
 
            Listing contents in "file.zip" with jp(cp932) encoding.
@@ -66,6 +70,9 @@ EXAMPLES:
 
            Extract contents in "file.zip" with password "1234" with chinese_1
                python3 encunzip.py e jp file.zip output p 1234 ch1
+
+           Extract contents in "file.zip" with password "1234" with chinese_1 ignoring any encoding & decoding error
+               python3 encunzip.py e jp file.zip output p 1234 ch1 -noencerr
 
 """
 
@@ -129,7 +136,7 @@ def loadarchive(infile):
 
 # list zip file content
 # unzip -l
-def enclszip(infile, encoding):
+def enclszip(infile, encoding, ignore_encode_err=False):
     
     # setup/check input & output
     infile = Path(infile)
@@ -140,12 +147,17 @@ def enclszip(infile, encoding):
     archive = loadarchive(infile)
     with archive(infile) as zip:
         for info in zip.infolist():
-            item = info.filename.encode('cp437').decode(encoding)
+            try:
+                item = info.filename.encode('cp437').decode(encoding)
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                if not ignore_encode_err:
+                    raise
+                item = info.filename
             print(item)
 
 # unzip without file structure
 # unzip -e
-def encunzipe(infile, encoding, outfile, pwd=None):
+def encunzipe(infile, encoding, outfile, pwd=None, ignore_encode_err=False):
     
     # setup/check input & output
     infile = Path(infile)
@@ -164,7 +176,12 @@ def encunzipe(infile, encoding, outfile, pwd=None):
     with archive(infile) as zip:
         for info in zip.infolist():
             filename = info.filename
-            outitem = outfile/filename[filename.rfind('/')+1:].encode('cp437').decode(encoding)
+            try:
+                outitem = outfile/filename[filename.rfind('/')+1:].encode('cp437').decode(encoding)
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                if not ignore_encode_err:
+                    raise
+                outitem = outfile/filename[filename.rfind('/')+1:]
             current_size += info.file_size
             print(genPerc(current_size, size), outitem)
             if not info.is_dir(): # is file
@@ -175,7 +192,7 @@ def encunzipe(infile, encoding, outfile, pwd=None):
 
 # unzip keeping file structure
 # unzip -x
-def encunzipx(infile, encoding, outfile, pwd=None):
+def encunzipx(infile, encoding, outfile, pwd=None, ignore_encode_err=False):
     
     # setup/check input & output
     infile = Path(infile)
@@ -194,7 +211,13 @@ def encunzipx(infile, encoding, outfile, pwd=None):
     with archive(infile) as zip:
         for info in zip.infolist():
             filename = info.filename
-            outitem = outfile/filename.encode('cp437').decode(encoding)
+            try:
+                outitem = outfile/filename.encode('cp437').decode(encoding)
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                if not ignore_encode_err:
+                    raise
+                outitem = outfile/filename
+            outitem.parent.mkdir(parents=True, exist_ok=True)
             current_size += info.file_size
             print(genPerc(current_size, size), outitem)
             if not info.is_dir(): # is file
@@ -234,35 +257,61 @@ if __name__ == '__main__':
     
     try:
         
-        if len(argv) < 4 or len(argv) > 8 or len(argv) == 6:
+        if len(argv) < 4:
             help()
             exit()
         
-        operation = argv[1]
-        encoding = getEnc(argv[2])
-        infile = Path(argv[3])
-        password = None
-        pwdencode = None
-        if len(argv) == 8:
-            pwdencode = getEnc(argv[7])
-            password = argv[6].encode(pwdencode)
+        
+        argv_len = len(argv)
+        cursor = 1
+        operation = argv[cursor]
+        cursor += 1
         
         # list zip file
         if operation == 'l':
-            enclszip(infile, encoding)
+            encoding = getEnc(argv[cursor])
+            cursor += 1
+            infile = argv[cursor]
+            cursor += 1
+            ignore_encode_err = False
+            if cursor < argv_len and argv[cursor] == '-noencerr':
+                ignore_encode_err = True
+            enclszip(infile, encoding, ignore_encode_err)
         
         elif operation == 'e':
-            if len(argv) != 5 and len(argv) != 8: raise Exception("Please supply a output directory")
-            outpath = Path(argv[4])
+            encoding = getEnc(argv[cursor])
+            cursor += 1
+            infile = argv[cursor]
+            cursor += 1
+            outpath = Path(argv[cursor])
+            cursor += 1
+            password = None
+            if cursor < argv_len and argv[cursor] == 'p':
+                pwdencode = getEnc(argv[cursor+2])
+                password = argv[cursor+1].encode(pwdencode)
             if not outpath.exists(): outpath.mkdir()
-            encunzipe(infile, encoding, outpath, password)
+            ignore_encode_err = False
+            if cursor < argv_len and argv[cursor] == '-noencerr':
+                ignore_encode_err = True
+            encunzipe(infile, encoding, outpath, password, ignore_encode_err)
         
         # unzip to a folder with original file structure
         elif operation == 'x':
-            if len(argv) != 5 and len(argv) != 8: raise Exception("Please supply a output directory")
-            outpath = Path(argv[4])
+            encoding = getEnc(argv[cursor])
+            cursor += 1
+            infile = argv[cursor]
+            cursor += 1
+            outpath = Path(argv[cursor])
+            cursor += 1
+            password = None
+            if cursor < argv_len and argv[cursor] == 'p':
+                pwdencode = getEnc(argv[cursor+2])
+                password = argv[cursor+1].encode(pwdencode)
             if not outpath.exists(): outpath.mkdir()
-            encunzipx(infile, encoding, outpath, password)
+            ignore_encode_err = False
+            if cursor < argv_len and argv[cursor] == '-noencerr':
+                ignore_encode_err = True
+            encunzipx(infile, encoding, outpath, password, ignore_encode_err)
         
         else:
             help()
@@ -270,4 +319,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print()
         exit(-1)
+    except IndexError:
+        pass
 
