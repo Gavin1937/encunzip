@@ -11,3 +11,4 @@
 # folders
 /__pycache__/
 /data/
+/*venv*/
